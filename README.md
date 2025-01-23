@@ -2,16 +2,19 @@
 
 This project showcases the RouteSegmentation algorithm and the RouteBoxer algorithm in an Android application.
 
-## Setup Google Maps API key
+## Setup Google Maps API Key
 
-Create a new file app/src/main/res/values/secrets.xml with:
-```
+1. Create a new file at `app/src/main/res/values/secrets.xml` with the following content:
+
+```xml
 <resources>
     <string name="google_maps_key">YOUR_API_KEY_HERE</string>
 </resources>
 ```
 
-This file is in .gitignore and won't be committed.
+2. Replace `YOUR_API_KEY_HERE` with your actual Google Maps API key.
+
+This API key is used for integrating the Google Maps library and the Directions API into your application.
 
 ## Cite our papers
 
