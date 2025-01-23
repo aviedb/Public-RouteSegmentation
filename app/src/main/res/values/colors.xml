@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#06140E</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="offwhite">#F7F4EE</color>
+    <color name="darkgreen">#1D3630</color>
+    <color name="green">#6E807A</color>
+    <color name="lightgreen">#BECAC4</color>
+    <color name="tan">#E1DFDA</color>
+    <color name="clear_red">#CC0000</color>
+    <color name="start_green">#008000</color>
+    <color name="transparent25_green">#3F008200</color>
+    <color name="transparent50_green">#7F008200</color>
+    <color name="blue">#006EFF</color>
+</resources>

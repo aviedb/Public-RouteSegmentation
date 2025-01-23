@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/useRouteBoxerMenu"
+        android:title="@string/menu_route_boxer" />
+    <item
+        android:id="@+id/useRouteSegmentationMenu"
+        android:title="@string/menu_route_segmentation" />
+</menu>
