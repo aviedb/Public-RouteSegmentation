@@ -82,7 +82,8 @@ public class MapActivity extends AppCompatActivity
   private Polyline polylineRoute;
   private Polygon polygonRoute;
   private LatLng locCurrent, locOrigin, locDestination;
-  private List<LatLng> pointsPolyline, pointsPolygon;
+  private List<RouteSegmentation.Point> pointsPolygon;
+  private List<RouteSegmentation.Point> pointsPolyline;
 
   private List<Marker> markersSearchResult;
   private List<Poi> listMalangPoi;
@@ -210,13 +211,15 @@ public class MapActivity extends AppCompatActivity
   }
 
   private void handleClearState() {
+    this.pointsPolygon = null;
+    this.pointsPolyline = null;
     this.locOrigin = this.locCurrent;
     this.locDestination = null;
     this.etSearch.setText("");
     this.googleMap.clear();
     handleClear();
     updateFloatingButtonVisibility();
-    updateSearchBarVisibility(false);
+    updateSearchBarVisibility();
   }
 
   private void showAlgorithmMenu(View v) {
@@ -318,11 +321,20 @@ public class MapActivity extends AppCompatActivity
         bounds.forEach(boundsBuilder::include);
         this.googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 150));
 
+        this.polylineRoute = googleMap.addPolyline(new PolylineOptions()
+            .addAll(points)
+            .zIndex(101)
+            .width(8)
+            .color(ContextCompat.getColor(this, R.color.blue)));
+
+        this.pointsPolyline = new ArrayList<>();
+        points.forEach(point -> this.pointsPolyline.add(new RouteSegmentation.Point(point.latitude, point.longitude)));
+
         if (Objects.equals(algorithmToUse, STR_ROUTE_BOXER)) {
-          createRouteBoxer(points);
+          createRouteBoxer();
         } else if (Objects.equals(algorithmToUse, STR_ROUTE_SEGMENTATION)) {
           logRouteParameters(dStraight, dTotal, points);
-          createRouteSegmentation(points);
+          createRouteSegmentation();
         }
       });
     } catch (Exception e) {
@@ -369,50 +381,41 @@ public class MapActivity extends AppCompatActivity
     return (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
   }
 
-  private void createRouteSegmentation(List<LatLng> points) {
+  private void createRouteSegmentation() {
     collectDataBeforeProcess();
 
-    this.pointsPolyline = points;
-    PolylineOptions lineOptions = new PolylineOptions()
-        .addAll(pointsPolyline)
-        .zIndex(101)
-        .width(8)
-        .color(ContextCompat.getColor(this, R.color.blue));
-
-    RouteSegmentation rs = new RouteSegmentation(pointsPolyline, EPSILON);
+    RouteSegmentation rs = new RouteSegmentation(this.pointsPolyline, EPSILON);
     this.pointsPolygon = rs.createRoutePolygon();
+
+    List<LatLng> latLngLocal = new ArrayList<>();
+    this.pointsPolygon.forEach(point -> latLngLocal.add(new LatLng(point.latitude, point.longitude)));
+
     PolygonOptions polygonOptions = new PolygonOptions()
-        .addAll(pointsPolygon)
+        .addAll(latLngLocal)
         .zIndex(100)
         .strokeWidth(4)
         .strokeColor(ContextCompat.getColor(this, R.color.transparent50_green))
         .fillColor(ContextCompat.getColor(this, R.color.transparent25_green));
 
-    this.polylineRoute = googleMap.addPolyline(lineOptions);
     this.polygonRoute = googleMap.addPolygon(polygonOptions);
 
     updateLoadingState(false);
     collectDataAfterProcess();
     logPerformance("RouteSegmentation");
+    updateSearchBarVisibility();
   }
 
-  private void createRouteBoxer(List<LatLng> points) {
+  private void createRouteBoxer() {
     collectDataBeforeProcess();
 
     RouteBoxerTask routeBoxerTask = new RouteBoxerTask(
-        new ArrayList<>(points),
+        new ArrayList<>(this.pointsPolyline),
         EPSILON,
         false, 
         false, 
         this
     );
     routeBoxerTask.execute();
-
-    this.polylineRoute = googleMap.addPolyline(new PolylineOptions()
-        .addAll(points)
-        .zIndex(101)
-        .width(8)
-        .color(ContextCompat.getColor(this, R.color.blue)));
   }
 
   private void logPerformance(String algorithm) {
@@ -451,6 +454,7 @@ public class MapActivity extends AppCompatActivity
     updateLoadingState(false);
     collectDataAfterProcess();
     logRouteBoxerStats(boxes);
+    updateSearchBarVisibility();
   }
 
   private void logRouteBoxerStats(ArrayList<RouteBoxer.Box> boxes) {
@@ -497,7 +501,7 @@ public class MapActivity extends AppCompatActivity
   public void onRouteBoxerBoxes(ArrayList<RouteBoxer.Box> boxes, int boxBorderColor, int boxFillColor) {}
 
   @Override
-  public void onRouteBoxerSimplifiedRoute(ArrayList<LatLng> simplifiedRoute, int lineColor) {}
+  public void onRouteBoxerSimplifiedRoute(ArrayList<RouteSegmentation.Point> simplifiedRoute, int lineColor) {}
 
   private void fetchLastLocation() {
     if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -519,8 +523,8 @@ public class MapActivity extends AppCompatActivity
     googleMap.setPadding(0, 220, 0, showButtons ? 200 : 0);
   }
 
-  private void updateSearchBarVisibility(boolean visible) {
-    lytSearchBarContainer.setVisibility(visible ? View.VISIBLE : View.GONE);
+  private void updateSearchBarVisibility() {
+    lytSearchBarContainer.setVisibility(this.pointsPolygon != null ? View.VISIBLE : View.GONE);
   }
 
   private void updateLoadingState(boolean isLoading) {

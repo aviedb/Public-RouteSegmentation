@@ -10,31 +10,31 @@ import java.util.ArrayList;
 public class RouteBoxerTask extends AsyncTask<Void, RouteBoxerTask.RouteBoxerData, ArrayList<RouteBoxer.Box>>
     implements RouteBoxer.IRouteBoxer {
 
-  private final ArrayList<LatLng> route = new ArrayList<>();
+  private final ArrayList<RouteSegmentation.Point> route = new ArrayList<>();
   private final int distance;
   private final IRouteBoxerTask iRouteBoxerTask;
   private int step;
   private Boolean simplify = false;
   private Boolean runBoth = false;
 
-  public RouteBoxerTask(ArrayList<LatLng> route, int distance, IRouteBoxerTask iRouteBoxerTask) {
-    for (LatLng point:
+  public RouteBoxerTask(ArrayList<RouteSegmentation.Point> route, int distance, IRouteBoxerTask iRouteBoxerTask) {
+    for (RouteSegmentation.Point point:
         route) {
-      LatLng latLng = new LatLng(point.latitude, point.longitude);
+      RouteSegmentation.Point latLng = new RouteSegmentation.Point(point.latitude, point.longitude);
       this.route.add(latLng);
     }
     this.distance = distance;
     this.iRouteBoxerTask = iRouteBoxerTask;
   }
 
-  public RouteBoxerTask(ArrayList<LatLng> route, int distance, boolean simplifyRoute, boolean runBoth, IRouteBoxerTask iRouteBoxerTask) {
+  public RouteBoxerTask(ArrayList<RouteSegmentation.Point> route, int distance, boolean simplifyRoute, boolean runBoth, IRouteBoxerTask iRouteBoxerTask) {
     this(route, distance, iRouteBoxerTask);
     this.simplify = simplifyRoute;
     this.runBoth = runBoth;
         /*
-        for (LatLng point:
+        for (RouteSegmentation.Point point:
                 route) {
-            LatLng latLng = new LatLng(point.latitude, point.longitude);
+            RouteSegmentation.Point latLng = new RouteSegmentation.Point(point.latitude, point.longitude);
             this.route.add(latLng);
         }
         this.distance = distance;
@@ -106,16 +106,16 @@ public class RouteBoxerTask extends AsyncTask<Void, RouteBoxerTask.RouteBoxerDat
   }
 
   @Override
-  public void onRouteSimplified(ArrayList<LatLng> simplifiedRoute) {
+  public void onRouteSimplified(ArrayList<RouteSegmentation.Point> simplifiedRoute) {
     RouteBoxerData data = new RouteBoxerData(simplifiedRoute, Color.argb(128, 0, 0, 200));
     publishProgress(data);
   }
 
   @Override
-  public void drawLine(LatLng origin, LatLng destination, int color) {}
+  public void drawLine(RouteSegmentation.Point origin, RouteSegmentation.Point destination, int color) {}
 
   @Override
-  public void drawBox(LatLng origin, LatLng destination, int color) {}
+  public void drawBox(RouteSegmentation.Point origin, RouteSegmentation.Point destination, int color) {}
 
   @Override
   public void clearPolygon() {}
@@ -137,9 +137,9 @@ public class RouteBoxerTask extends AsyncTask<Void, RouteBoxerTask.RouteBoxerDat
           this.iRouteBoxerTask.onRouteBoxerBoxes(data.boxes, data.boxBorderColor, data.boxFillColor);
       } else if(data.type == DataType.Route) {
         if(data.simplifiedRoute != null) {
-          ArrayList<LatLng> route = new ArrayList<>();
-          for (LatLng point: data.simplifiedRoute) {
-            route.add(new LatLng(point.latitude, point.longitude));
+          ArrayList<RouteSegmentation.Point> route = new ArrayList<>();
+          for (RouteSegmentation.Point point: data.simplifiedRoute) {
+            route.add(new RouteSegmentation.Point(point.latitude, point.longitude));
           }
           this.iRouteBoxerTask.onRouteBoxerSimplifiedRoute(route, data.lineColor);
         }
@@ -160,7 +160,7 @@ public class RouteBoxerTask extends AsyncTask<Void, RouteBoxerTask.RouteBoxerDat
     private int lineColor = Color.BLUE;
     private int markedColor;
     private int simpleMarkedColor;
-    private ArrayList<LatLng> simplifiedRoute;
+    private ArrayList<RouteSegmentation.Point> simplifiedRoute;
 
     private RouteBoxerData(String message) {
       this.message = message;
@@ -173,7 +173,7 @@ public class RouteBoxerTask extends AsyncTask<Void, RouteBoxerTask.RouteBoxerDat
       this.boxFillColor = boxFillColor;
     }
 
-    public RouteBoxerData(ArrayList<LatLng> simplifiedRoute, int lineColor) {
+    public RouteBoxerData(ArrayList<RouteSegmentation.Point> simplifiedRoute, int lineColor) {
       this.type = DataType.Route;
       this.simplifiedRoute = simplifiedRoute;
       this.lineColor = lineColor;
@@ -198,7 +198,7 @@ public class RouteBoxerTask extends AsyncTask<Void, RouteBoxerTask.RouteBoxerDat
     void onRouteBoxerMessage(String message);
     void onRouteBoxerGrid(ArrayList<RouteBoxer.Box> boxes, int boxBorderColor, int markedColor, int simpleMarkedColor);
     void onRouteBoxerBoxes(ArrayList<RouteBoxer.Box> boxes, int boxBorderColor, int boxFillColor);
-    void onRouteBoxerSimplifiedRoute(ArrayList<LatLng> simplifiedRoute, int lineColor);
+    void onRouteBoxerSimplifiedRoute(ArrayList<RouteSegmentation.Point> simplifiedRoute, int lineColor);
 
   }
 }

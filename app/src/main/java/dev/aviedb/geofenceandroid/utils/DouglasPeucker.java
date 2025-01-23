@@ -11,17 +11,17 @@ public class DouglasPeucker {
   private double toleranceDistance = 200; // meter
   private static final double oneDegreeInMeter = 111319.9; // 1 degree in meter
 
-  public ArrayList<Point> simplify(ArrayList<Point> points, int toleranceDistance) {
+  public ArrayList<RouteSegmentation.Point> simplify(ArrayList<RouteSegmentation.Point> points, int toleranceDistance) {
 
     if(toleranceDistance == 0) this.toleranceDistance = 200;
     else this.toleranceDistance = toleranceDistance;
 
-    for (Point point : points)
+    for (RouteSegmentation.Point point : points)
       this.points.add(new LatLng(point.latitude, point.longitude));
 
     this.douglasPeucker(this.points);
 
-    ArrayList<Point> simplifiedPoints = new ArrayList<>();
+    ArrayList<RouteSegmentation.Point> simplifiedPoints = new ArrayList<>();
     simplifiedPoints.add(this.points.get(0));
     for (LatLng point :
         this.points) {
@@ -82,7 +82,7 @@ public class DouglasPeucker {
   }
 
 
-  private class LatLng extends Point {
+  private class LatLng extends RouteSegmentation.Point {
 
     private boolean keep = false;
 
@@ -97,13 +97,5 @@ public class DouglasPeucker {
       return this.keep;
     }
 
-  }
-
-  public static class Point {
-    public double latitude, longitude;
-    public Point(double latitude, double longitude) {
-      this.latitude = latitude;
-      this.longitude = longitude;
-    }
   }
 }

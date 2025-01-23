@@ -39,6 +39,21 @@ public class GeoUtils {
     return latLngList;
   }
 
+  public static List<RouteSegmentation.Point> GeometryToListPoint(Geometry geometry) {
+    List<RouteSegmentation.Point> pointList = new ArrayList<>();
+
+    if (geometry instanceof Polygon) {
+      Polygon polygon = (Polygon) geometry;
+      Coordinate[] coordinates = polygon.getExteriorRing().getCoordinates();
+
+      for (Coordinate coord : coordinates) {
+        pointList.add(new RouteSegmentation.Point(coord.y, coord.x));
+      }
+    }
+
+    return pointList;
+  }
+
   public static List<LatLng> PolygonToListLng(Polygon polygon) {
     List<LatLng> latLngList = new ArrayList<>();
     Coordinate[] coordinates = polygon.getExteriorRing().getCoordinates();
@@ -50,7 +65,7 @@ public class GeoUtils {
     return latLngList;
   }
 
-  public static boolean isCoordInsidePolygon(LatLng coord, List<LatLng> polygon) {
+  public static boolean isCoordInsidePolygon(LatLng coord, List<RouteSegmentation.Point> polygon) {
     double x = coord.longitude;
     double y = coord.latitude;
     boolean inside = false;

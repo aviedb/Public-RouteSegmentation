@@ -11,18 +11,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RouteSegmentation {
-  private final List<LatLng> POLYLINE;
+  private final List<Point> POLYLINE;
   private final double SEGMENT_WIDTH; // meters
   private final int CIRCLE_STEPS = 16; // number of sides in circle
   private final double EARTH_RADIUS = 6371008.8; // meters
   private final GeometryFactory geometryFactory = new GeometryFactory();
 
-  public RouteSegmentation(List<LatLng> polyline, int width) {
+  public RouteSegmentation(List<Point> polyline, int width) {
     this.POLYLINE = polyline;
     this.SEGMENT_WIDTH = (double) width;
   }
 
-  public List<LatLng> createRoutePolygon() {
+  public List<Point> createRoutePolygon() {
     // Initialize the main polygon with a circle from the first point
     Geometry polygon = createCirclePolygon(this.POLYLINE.get(0));
 
@@ -38,10 +38,10 @@ public class RouteSegmentation {
       polygon = polygon.union(segmentPolygon);
     }
 
-    return GeoUtils.GeometryToListLatLng(polygon);
+    return GeoUtils.GeometryToListPoint(polygon);
   }
 
-  private Polygon createCirclePolygon(LatLng center) {
+  private Polygon createCirclePolygon(Point center) {
     Coordinate[] coordinates = new Coordinate[this.CIRCLE_STEPS + 1];
 
     for (int i = 0; i < this.CIRCLE_STEPS; i++) {
@@ -68,7 +68,7 @@ public class RouteSegmentation {
     return this.geometryFactory.createPolygon(coordinates);
   }
 
-  private Polygon createSegmentPolygon(LatLng origin, LatLng dest) {
+  private Polygon createSegmentPolygon(Point origin, Point dest) {
     Coordinate[] leftOffset = lineOffset(origin, dest, this.SEGMENT_WIDTH);
     Coordinate[] rightOffset = lineOffset(origin, dest, -this.SEGMENT_WIDTH);
     Coordinate[] semiCircle = bearingSemiCircle(dest, leftOffset[1], rightOffset[1]);
@@ -86,7 +86,7 @@ public class RouteSegmentation {
     return this.geometryFactory.createPolygon(result);
   }
 
-  private Coordinate[] lineOffset(LatLng origin, LatLng dest, double distance) {
+  private Coordinate[] lineOffset(Point origin, Point dest, double distance) {
     double offsetDegrees = radiansToDegrees(distanceToRadians(distance));
 
     // Thank you!! https://stackoverflow.com/a/2825673
@@ -105,7 +105,7 @@ public class RouteSegmentation {
     };
   }
 
-  private Coordinate[] bearingSemiCircle(LatLng mid, Coordinate start, Coordinate end) {
+  private Coordinate[] bearingSemiCircle(Point mid, Coordinate start, Coordinate end) {
     // semi circle is half the circle - 2, because the 2 points will be the same as the start and end point
     final int SEMICIRCLE_STEPS = this.CIRCLE_STEPS/2 - 2;
     Coordinate[] coordinates = new Coordinate[SEMICIRCLE_STEPS];
@@ -159,5 +159,13 @@ public class RouteSegmentation {
 
   private double distanceToRadians(double distance) {
     return distance / EARTH_RADIUS;
+  }
+
+  public static class Point {
+    public double latitude, longitude;
+    public Point(double latitude, double longitude) {
+      this.latitude = latitude;
+      this.longitude = longitude;
+    }
   }
 }

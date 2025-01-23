@@ -1,12 +1,10 @@
 package dev.aviedb.geofenceandroid.utils;
 
-import com.google.android.gms.maps.model.LatLng;
-
 import java.util.ArrayList;
 
 public class RouteBoxer {
 
-  private ArrayList<LatLng> route;
+  private ArrayList<RouteSegmentation.Point> route;
   private int distance;
   private double degree;
   private Boolean simplify = false;
@@ -17,13 +15,13 @@ public class RouteBoxer {
   private ArrayList<RouteBoxer.Box> routeBoxesH;
   private ArrayList<RouteBoxer.Box> routeBoxesV;
 
-  public RouteBoxer(ArrayList<LatLng> route, int distance) {
+  public RouteBoxer(ArrayList<RouteSegmentation.Point> route, int distance) {
     this.route = route;
     this.distance = distance;
     this.degree = this.distance / 1.1132 * 0.00001;
   }
 
-  public RouteBoxer(ArrayList<LatLng> route, int distance, Boolean simplify, Boolean runBoth) {
+  public RouteBoxer(ArrayList<RouteSegmentation.Point> route, int distance, Boolean simplify, Boolean runBoth) {
     this(route, distance);
     this.simplify = simplify;
     this.runBoth = runBoth;
@@ -33,12 +31,12 @@ public class RouteBoxer {
     this.iRouteBoxer = iRouteBoxer;
   }
 
-  public static ArrayList<RouteBoxer.Box> box(ArrayList<LatLng> path, int distance) {
+  public static ArrayList<RouteBoxer.Box> box(ArrayList<RouteSegmentation.Point> path, int distance) {
     RouteBoxer routeBoxer = new RouteBoxer(path, distance);
     return routeBoxer.box();
   }
 
-  public static ArrayList<RouteBoxer.Box> box(ArrayList<LatLng> path, int distance, RouteBoxer.IRouteBoxer iRouteBoxer) {
+  public static ArrayList<RouteBoxer.Box> box(ArrayList<RouteSegmentation.Point> path, int distance, RouteBoxer.IRouteBoxer iRouteBoxer) {
     RouteBoxer routeBoxer = new RouteBoxer(path, distance);
     routeBoxer.setRouteBoxerInterface(iRouteBoxer);
     return routeBoxer.box();
@@ -56,7 +54,7 @@ public class RouteBoxer {
 
     this.bounds = new LatLngBounds();
     //LatLngBounds.Builder builder = LatLngBounds.builder();
-    for (LatLng point : this.route) {
+    for (RouteSegmentation.Point point : this.route) {
       this.bounds.include(point);
     }
 
@@ -66,9 +64,9 @@ public class RouteBoxer {
     // Expanding bounds
 
     this.bounds.build();
-    LatLng southwest = new LatLng(this.bounds.southwest.latitude - this.degree,
+    RouteSegmentation.Point southwest = new RouteSegmentation.Point(this.bounds.southwest.latitude - this.degree,
         this.bounds.southwest.longitude - this.degree);
-    LatLng northeast = new LatLng(this.bounds.northeast.latitude + this.degree,
+    RouteSegmentation.Point northeast = new RouteSegmentation.Point(this.bounds.northeast.latitude + this.degree,
         this.bounds.northeast.longitude + this.degree);
     this.bounds = this.bounds.include(southwest).include(northeast).build();
 
@@ -82,8 +80,8 @@ public class RouteBoxer {
     if(this.iRouteBoxer != null)
       this.iRouteBoxer.onProcess("Overlaying grid...");
 
-    LatLng sw = this.bounds.southwest;
-    LatLng ne = new LatLng(sw.latitude + this.degree, sw.longitude + this.degree);
+    RouteSegmentation.Point sw = this.bounds.southwest;
+    RouteSegmentation.Point ne = new RouteSegmentation.Point(sw.latitude + this.degree, sw.longitude + this.degree);
     int x = 0, y = 0;
     RouteBoxer.Box gridBox;
 
@@ -92,15 +90,15 @@ public class RouteBoxer {
       do {
         gridBox = new RouteBoxer.Box(sw, ne, x, y);
         this.boxes.add(gridBox); //box.draw(mMap, Color.BLUE);
-        sw = new LatLng(sw.latitude, ne.longitude);
-        ne = new LatLng(sw.latitude + degree, sw.longitude + degree);
+        sw = new RouteSegmentation.Point(sw.latitude, ne.longitude);
+        ne = new RouteSegmentation.Point(sw.latitude + degree, sw.longitude + degree);
         x++;
       } while (gridBox.ne.longitude < this.bounds.northeast.longitude);
 
       if (gridBox.ne.latitude < this.bounds.northeast.latitude) {
         x = 0;
-        sw = new LatLng(sw.latitude + degree, this.bounds.southwest.longitude);
-        ne = new LatLng(sw.latitude + degree, sw.longitude + degree);
+        sw = new RouteSegmentation.Point(sw.latitude + degree, this.bounds.southwest.longitude);
+        ne = new RouteSegmentation.Point(sw.latitude + degree, sw.longitude + degree);
       }
       y++;
 
@@ -120,8 +118,8 @@ public class RouteBoxer {
 
     RouteBoxer.Box alignedBoxes[][] = new RouteBoxer.Box[x][y];
     for (RouteBoxer.Box bx : this.boxes) {
-      bx.sw = new LatLng(bx.sw.latitude - (latDif / 2), bx.sw.longitude - (lngDif / 2));
-      bx.ne = new LatLng(bx.ne.latitude - (latDif / 2), bx.ne.longitude - (lngDif / 2));
+      bx.sw = new RouteSegmentation.Point(bx.sw.latitude - (latDif / 2), bx.sw.longitude - (lngDif / 2));
+      bx.ne = new RouteSegmentation.Point(bx.ne.latitude - (latDif / 2), bx.ne.longitude - (lngDif / 2));
       bx.updateNWSE();
       alignedBoxes[bx.x][bx.y] = bx;
     }
@@ -136,28 +134,28 @@ public class RouteBoxer {
       if (!this.simplify)
         alignedBoxes = this.traversePointsAndMarkGrids(alignedBoxes, this.route);
       else {
-        ArrayList<DouglasPeucker.Point> complexRoute = new ArrayList<>();
-        for (LatLng latLng : this.route) {
-          complexRoute.add(new DouglasPeucker.Point(latLng.latitude, latLng.longitude));
+        ArrayList<RouteSegmentation.Point> complexRoute = new ArrayList<>();
+        for (RouteSegmentation.Point latLng : this.route) {
+          complexRoute.add(new RouteSegmentation.Point(latLng.latitude, latLng.longitude));
         }
-        ArrayList<DouglasPeucker.Point> simplifiedRoute = new DouglasPeucker().simplify(complexRoute, this.distance);
-        ArrayList<LatLng> newSimplifiedRoute = new ArrayList<>();
-        for (DouglasPeucker.Point point : simplifiedRoute)
-          newSimplifiedRoute.add(new LatLng(point.latitude, point.longitude));
+        ArrayList<RouteSegmentation.Point> simplifiedRoute = new DouglasPeucker().simplify(complexRoute, this.distance);
+        ArrayList<RouteSegmentation.Point> newSimplifiedRoute = new ArrayList<>();
+        for (RouteSegmentation.Point point : simplifiedRoute)
+          newSimplifiedRoute.add(new RouteSegmentation.Point(point.latitude, point.longitude));
         if (this.iRouteBoxer != null)
           this.iRouteBoxer.onRouteSimplified(newSimplifiedRoute);
         alignedBoxes = this.traversePointsAndMarkGrids(alignedBoxes, newSimplifiedRoute);
       }
     } else {
       // run both
-      ArrayList<DouglasPeucker.Point> complexRoute = new ArrayList<>();
-      for (LatLng latLng : this.route) {
-        complexRoute.add(new DouglasPeucker.Point(latLng.latitude, latLng.longitude));
+      ArrayList<RouteSegmentation.Point> complexRoute = new ArrayList<>();
+      for (RouteSegmentation.Point latLng : this.route) {
+        complexRoute.add(new RouteSegmentation.Point(latLng.latitude, latLng.longitude));
       }
-      ArrayList<DouglasPeucker.Point> simplifiedRoute = new DouglasPeucker().simplify(complexRoute, this.distance);
-      ArrayList<LatLng> newSimplifiedRoute = new ArrayList<>();
-      for (DouglasPeucker.Point point : simplifiedRoute)
-        newSimplifiedRoute.add(new LatLng(point.latitude, point.longitude));
+      ArrayList<RouteSegmentation.Point> simplifiedRoute = new DouglasPeucker().simplify(complexRoute, this.distance);
+      ArrayList<RouteSegmentation.Point> newSimplifiedRoute = new ArrayList<>();
+      for (RouteSegmentation.Point point : simplifiedRoute)
+        newSimplifiedRoute.add(new RouteSegmentation.Point(point.latitude, point.longitude));
       if (this.iRouteBoxer != null)
         this.iRouteBoxer.onRouteSimplified(newSimplifiedRoute);
       alignedBoxes = this.traversePointsAndMarkGridsBothRoute(alignedBoxes, this.route, newSimplifiedRoute);
@@ -202,15 +200,15 @@ public class RouteBoxer {
   }
 
   private RouteBoxer.Box[][] traversePointsAndMarkGrids(RouteBoxer.Box[][] boxArray,
-                                                        ArrayList<LatLng> route) {
+                                                        ArrayList<RouteSegmentation.Point> route) {
     int sizeX = boxArray.length;
     int sizeY = boxArray[0].length;
 
     int i=0;
-    LatLng origin = null, destination;
+    RouteSegmentation.Point origin = null, destination;
     //ArrayList<Line> lines = new ArrayList<>();
 
-    for (LatLng point : route) {
+    for (RouteSegmentation.Point point : route) {
 
       Line l = null;
       double ay1 = 0, ay2 = 0, ax2 = 0, ax1 = 0;
@@ -304,16 +302,16 @@ public class RouteBoxer {
   }
 
   private RouteBoxer.Box[][] traversePointsAndMarkGridsBothRoute(RouteBoxer.Box[][] boxArray,
-                                                                 ArrayList<LatLng> route,
-                                                                 ArrayList<LatLng> simplifiedRoute) {
+                                                                 ArrayList<RouteSegmentation.Point> route,
+                                                                 ArrayList<RouteSegmentation.Point> simplifiedRoute) {
     int sizeX = boxArray.length;
     int sizeY = boxArray[0].length;
 
     int i=0;
-    LatLng origin = null, destination;
+    RouteSegmentation.Point origin = null, destination;
     //ArrayList<Line> lines = new ArrayList<>();
 
-    for (LatLng point : route) {
+    for (RouteSegmentation.Point point : route) {
 
       Line l = null;
       double ay1 = 0, ay2 = 0, ax2 = 0, ax1 = 0;
@@ -399,7 +397,7 @@ public class RouteBoxer {
     if(simplifiedRoute != null) {
       i = 0;
 
-      for (LatLng point : simplifiedRoute) {
+      for (RouteSegmentation.Point point : simplifiedRoute) {
 
         Line l = null;
         double ay1 = 0, ay2 = 0, ax2 = 0, ax1 = 0;
@@ -655,9 +653,9 @@ public class RouteBoxer {
     void onMergedVertically(ArrayList<RouteBoxer.Box> mergedBoxes);
     void onMergedHorizontally(ArrayList<RouteBoxer.Box> mergedBoxes);
     void onProcess(String processInfo);
-    void onRouteSimplified(ArrayList<LatLng> simplifiedRoute);
-    void drawLine(LatLng origin, LatLng destination, int color);
-    void drawBox(LatLng origin, LatLng destination, int yellow);
+    void onRouteSimplified(ArrayList<RouteSegmentation.Point> simplifiedRoute);
+    void drawLine(RouteSegmentation.Point origin, RouteSegmentation.Point destination, int color);
+    void drawBox(RouteSegmentation.Point origin, RouteSegmentation.Point destination, int yellow);
     void clearPolygon();
   }
 
@@ -671,15 +669,15 @@ public class RouteBoxer {
     public Boolean expandMarked = false;
     public Boolean merged = false;
 
-    public LatLng ne;
-    public LatLng sw;
-    private LatLng nw;
-    private LatLng se;
+    public RouteSegmentation.Point ne;
+    public RouteSegmentation.Point sw;
+    private RouteSegmentation.Point nw;
+    private RouteSegmentation.Point se;
 
 
     private Box() {}
 
-    private Box(LatLng sw, LatLng ne, int x, int y) {
+    private Box(RouteSegmentation.Point sw, RouteSegmentation.Point ne, int x, int y) {
       this.sw = sw;
       this.ne = ne;
       this.x = x;
@@ -688,8 +686,8 @@ public class RouteBoxer {
     }
 
     private void updateNWSE() {
-      this.nw = new LatLng(this.ne.latitude, this.sw.longitude);
-      this.se = new LatLng(this.sw.latitude, this.ne.longitude);
+      this.nw = new RouteSegmentation.Point(this.ne.latitude, this.sw.longitude);
+      this.se = new RouteSegmentation.Point(this.sw.latitude, this.ne.longitude);
     }
 
     private RouteBoxer.Box mark() { this.marked = true; return this; }
@@ -705,8 +703,8 @@ public class RouteBoxer {
       b.marked = box.marked;
       b.expandMarked = box.expandMarked;
       b.merged = box.merged;
-      b.ne = new LatLng(box.ne.latitude, box.ne.longitude);
-      b.sw = new LatLng(box.sw.latitude, box.sw.latitude);
+      b.ne = new RouteSegmentation.Point(box.ne.latitude, box.ne.longitude);
+      b.sw = new RouteSegmentation.Point(box.sw.latitude, box.sw.latitude);
       return b;
     }
 
@@ -714,12 +712,12 @@ public class RouteBoxer {
 
   public class LatLngBounds {
 
-    private ArrayList<LatLng> latLngs = new ArrayList<>();
+    private ArrayList<RouteSegmentation.Point> latLngs = new ArrayList<>();
 
-    private LatLng southwest;
-    private LatLng northeast;
+    private RouteSegmentation.Point southwest;
+    private RouteSegmentation.Point northeast;
 
-    private LatLngBounds include(LatLng latLng) {
+    private LatLngBounds include(RouteSegmentation.Point latLng) {
       this.latLngs.add(latLng);
       return this;
     }
@@ -731,7 +729,7 @@ public class RouteBoxer {
       double maxLng = 0;
       double minLat = 0;
       double minLng = 0;
-      for ( LatLng latLng:
+      for ( RouteSegmentation.Point latLng:
           this.latLngs) {
 
         if(maxLat == 0 && maxLng == 0 && minLat == 0 && minLng == 0) {
@@ -746,8 +744,8 @@ public class RouteBoxer {
         if(latLng.longitude < minLng) minLng = latLng.longitude;
       }
 
-      this.southwest = new LatLng(minLat, minLng);
-      this.northeast = new LatLng(maxLat, maxLng);
+      this.southwest = new RouteSegmentation.Point(minLat, minLng);
+      this.northeast = new RouteSegmentation.Point(maxLat, maxLng);
 
       return this;
     }
@@ -756,11 +754,11 @@ public class RouteBoxer {
   private class Line
   {
 
-    private LatLng origin;
-    private LatLng destination;
+    private RouteSegmentation.Point origin;
+    private RouteSegmentation.Point destination;
     private double m, c; // y = mx + c;
 
-    private Line (LatLng origin, LatLng destination) {
+    private Line (RouteSegmentation.Point origin, RouteSegmentation.Point destination) {
 
       this.origin = origin;
       this.destination = destination;
@@ -777,7 +775,7 @@ public class RouteBoxer {
       return (y - c) / this.m;
     }
 
-    private boolean intersect(LatLng to, LatLng td) {
+    private boolean intersect(RouteSegmentation.Point to, RouteSegmentation.Point td) {
 
       double y = this.getY(to.longitude);
       if(y <= td.latitude && y >= to.latitude) return true;
